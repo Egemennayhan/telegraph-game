@@ -156,9 +156,10 @@
 
         // OYUN DEĞİŞKENLERİ
         const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
-        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK"];
+        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK", "VOLTAJ", "TRANSISTOR", "TEKNIK", "MUHENDIS", "ENERJI", "FREKANS", "ANTEN", "YAZILIM", "SISTEM", "TELGRAF"];
         
         let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
+        let lastWords = []; // Son çıkan kelimeleri tutan liste
 
         // --- BUTON BAĞLANTILARI ---
         document.getElementById('btn-start').onclick = startStation;
@@ -254,7 +255,17 @@
 
         function nextRound() {
             if(isPlaying) return;
-            currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+            
+            // Yeni kelime seçme mantığı (Tekrarı engelleme)
+            let newWord;
+            do {
+                newWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+            } while (lastWords.includes(newWord)); // Eğer son kelimeler arasındaysa tekrar seç
+
+            currentWord = newWord;
+            lastWords.push(currentWord);
+            if(lastWords.length > 5) lastWords.shift(); // Sadece son 5 kelimeyi hatırla
+
             canEarnPoints = true;
             document.getElementById('answer-input').value = "";
             document.getElementById('status-msg').innerText = "Sinyal bekleniyor...";
