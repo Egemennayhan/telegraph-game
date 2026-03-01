@@ -172,7 +172,11 @@
             <input type="text" id="answer-input" placeholder="BURAYA YAZ" autocomplete="off">
         </div>
 
-        <div class="controls">
+        <div class="controls" id="initial-controls">
+            <button onclick="startStation()" style="background: var(--brass); color: var(--wood); font-size: 1.2rem; padding: 15px 25px;">İSTASYONU BAŞLAT</button>
+        </div>
+
+        <div class="controls" id="game-controls" style="display: none;">
             <button onclick="playCurrentWord()">TEKRAR DİNLE</button>
             <button onclick="checkAnswer()">GÖNDER</button>
             <button onclick="revealSolution()" class="secondary">SİNYALİ ÇÖZ</button>
@@ -208,6 +212,16 @@
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function startStation() {
+            initAudio();
+            document.getElementById('initial-controls').style.display = 'none';
+            document.getElementById('game-controls').style.display = 'flex';
+            nextRound();
         }
 
         function beep(duration) {
@@ -312,6 +326,8 @@
 
         window.onload = () => {
             currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+            // Mobilde ilk yüklemede otomatik başlamayı engellemiştik, 
+            // ama currentWord'ün dolu olduğundan emin olalım.
         };
     </script>
 </body>
