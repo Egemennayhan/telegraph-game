@@ -76,6 +76,8 @@
             padding: 10px 15px; font-family: inherit; cursor: pointer; text-transform: uppercase;
             font-weight: bold;
         }
+        
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         #leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         #leaderboard-table th, #leaderboard-table td { border-bottom: 1px solid var(--wood); padding: 8px; text-align: left; }
@@ -110,12 +112,12 @@
             <div id="stamp">ONAYLANDI</div>
             <input type="text" id="answer-input" placeholder="MESAJI YAZ" autocomplete="off">
             <div class="controls">
-                <button onclick="playCurrentWord()">TEKRAR DİNLE</button>
-                <button onclick="checkAnswer()">GÖNDER</button>
-                <button onclick="revealSolution()" style="opacity:0.7">SİNYALİ ÇÖZ</button>
-                <button onclick="nextRound()">YENİ KELİME</button>
+                <button id="btn-replay" onclick="playCurrentWord()">TEKRAR DİNLE</button>
+                <button id="btn-submit" onclick="checkAnswer()">GÖNDER</button>
+                <button id="btn-reveal" onclick="revealSolution()" style="opacity:0.7">SİNYALİ ÇÖZ</button>
+                <button id="btn-next" onclick="nextRound()">YENİ KELİME</button>
             </div>
-            <p id="status-msg" style="margin-top:10px; font-weight:bold; min-height: 1.2em;"></p>
+            <p id="status-msg" style="margin-top:15px; font-weight:bold; min-height: 1.5em; color: #8b0000;"></p>
             <p id="score-display">SKOR: 0</p>
         </div>
         
@@ -132,13 +134,12 @@
 
     <script>
         const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
-        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT"];
+        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK"];
         
         let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
 
         window.onload = () => {
             updateLeaderboardDisplay();
-            // Eski ismi hatırla
             const savedName = localStorage.getItem('last_operator_name');
             if(savedName) document.getElementById('operator-name').value = savedName;
         };
@@ -149,7 +150,6 @@
             operatorName = nameInp.toUpperCase();
             localStorage.setItem('last_operator_name', operatorName);
             
-            // Mevcut skoru yükle (Eski skorun üzerine devam etmesi için)
             let leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
             let existingEntry = leaderboard.find(e => e.name === operatorName);
             score = existingEntry ? existingEntry.score : 0;
@@ -183,9 +183,24 @@
             });
         }
 
+        async function playStatic() {
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            noise.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            noise.start();
+        }
+
         async function playMorse(word) {
             if (isPlaying) return;
             isPlaying = true;
+            toggleButtons(true);
             for (let char of word) {
                 const code = MORSE_CODE[char];
                 if (code) {
@@ -197,6 +212,12 @@
                 }
             }
             isPlaying = false;
+            toggleButtons(false);
+        }
+
+        function toggleButtons(disabled) {
+            const btns = ['btn-replay', 'btn-submit', 'btn-reveal', 'btn-next'];
+            btns.forEach(id => document.getElementById(id).disabled = disabled);
         }
 
         function nextRound() {
@@ -209,21 +230,33 @@
             setTimeout(() => {
                 document.getElementById('status-msg').innerText = "Sinyal alınıyor...";
                 playMorse(currentWord);
-            }, 1000);
+            }, 800);
         }
 
-        function checkAnswer() {
+        async function checkAnswer() {
             const val = document.getElementById('answer-input').value.trim().toUpperCase();
+            if(!val) return;
+
+            document.getElementById('status-msg').innerText = "MESAJ KONTROL EDİLİYOR...";
+            toggleButtons(true);
+
+            await new Promise(r => setTimeout(r, 800)); // Kontrol hissi
+
             if(val === currentWord) {
                 document.getElementById('stamp').classList.add('show');
+                document.getElementById('status-msg').innerText = "DOĞRULANDI! YENİ SİNYALE GEÇİLİYOR...";
                 if(canEarnPoints) {
                     score += 10;
                     document.getElementById('score-display').innerText = "SKOR: " + score;
                     saveScore();
                 }
-                document.getElementById('status-msg').innerText = "TEBRİKLER! DOĞRU MESAJ.";
+                setTimeout(() => {
+                    nextRound();
+                }, 2000);
             } else {
+                playStatic();
                 document.getElementById('status-msg').innerText = "HATALI SİNYAL! TEKRAR DENE.";
+                toggleButtons(false);
             }
         }
 
@@ -247,7 +280,11 @@
                 leaderboard.map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
         }
 
-        function revealSolution() { canEarnPoints = false; document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; }
+        function revealSolution() { 
+            canEarnPoints = false; 
+            document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; 
+        }
+        
         function playCurrentWord() { if(!isPlaying && currentWord) playMorse(currentWord); }
     </script>
 </body>
