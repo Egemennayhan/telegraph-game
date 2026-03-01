@@ -103,7 +103,7 @@
             <p>Operatör Adınızı Girin:</p>
             <input type="text" id="operator-name" placeholder="İSİM" maxlength="12">
             <div class="controls">
-                <button onclick="startStation()" style="background:var(--brass); color:var(--wood);">İSTASYONU BAŞLAT</button>
+                <button id="btn-start" style="background:var(--brass); color:var(--wood);">İSTASYONU BAŞLAT</button>
             </div>
         </div>
 
@@ -112,10 +112,10 @@
             <div id="stamp">ONAYLANDI</div>
             <input type="text" id="answer-input" placeholder="MESAJI YAZ" autocomplete="off">
             <div class="controls">
-                <button id="btn-replay" onclick="playCurrentWord()">TEKRAR DİNLE</button>
-                <button id="btn-submit" onclick="checkAnswer()">GÖNDER</button>
-                <button id="btn-reveal" onclick="revealSolution()" style="opacity:0.7">SİNYALİ ÇÖZ</button>
-                <button id="btn-next" onclick="nextRound()">YENİ KELİME</button>
+                <button id="btn-replay">TEKRAR DİNLE</button>
+                <button id="btn-submit">GÖNDER</button>
+                <button id="btn-reveal" style="opacity:0.7">SİNYALİ ÇÖZ</button>
+                <button id="btn-next">YENİ KELİME</button>
             </div>
             <p id="status-msg" style="margin-top:15px; font-weight:bold; min-height: 1.5em; color: #8b0000;"></p>
             <p id="score-display">SKOR: 0</p>
@@ -125,33 +125,69 @@
     </div>
 
     <div id="leaderboard-section">
-        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (DÜNYA GENELİ)</h3>
+        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (CANLI - TOP 5)</h3>
         <table id="leaderboard-table">
             <thead><tr><th>OPERATÖR</th><th>SKOR</th></tr></thead>
             <tbody id="leaderboard-body">
-                <tr><td colspan="2">Yükleniyor...</td></tr>
+                <tr><td colspan="2">Veriler çekiliyor...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <script>
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtXLVLIkXNpEFqy6N63T0phOYh7oV3naY",
+            authDomain: "telgraph-b4d05.firebaseapp.com",
+            databaseURL: "https://telgraph-b4d05-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "telgraph-b4d05",
+            storageBucket: "telgraph-b4d05.firebasestorage.app",
+            messagingSenderId: "580698562640",
+            appId: "1:580698562640:web:af8718a45fbe1389ab3155",
+            measurementId: "G-43MNEE2550"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // OYUN DEĞİŞKENLERİ
         const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
         const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK"];
         
-        // JSONBin.io - Daha güvenilir bir API (Kayıtsız kullanım)
-        const DB_URL = "https://api.jsonbin.io/v3/b/67c3746fad19ca34f814980f";
-        const API_KEY = "$2a$10$wN9iMRE2i5Z7Z9W6jE9O1.V8G5S4L3y9G9A1z8vP7m0p8f5z5Z5Z6"; // Örnek key (Normalde gizli olmalı ama bu projenin statik yapısı gereği mecburi)
-
         let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
 
-        window.onload = () => {
-            fetchLeaderboard();
-        };
+        // --- BUTON BAĞLANTILARI ---
+        document.getElementById('btn-start').onclick = startStation;
+        document.getElementById('btn-replay').onclick = () => { if(!isPlaying && currentWord) playMorse(currentWord); };
+        document.getElementById('btn-submit').onclick = checkAnswer;
+        document.getElementById('btn-reveal').onclick = revealSolution;
+        document.getElementById('btn-next').onclick = nextRound;
+
+        // --- LEADERBOARD TAKİBİ (CANLI) ---
+        const leaderboardRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(10));
+        onValue(leaderboardRef, (snapshot) => {
+            const scores = [];
+            snapshot.forEach((child) => {
+                scores.push(child.val());
+            });
+            scores.sort((a, b) => b.score - a.score);
+            renderLeaderboard(scores);
+        });
+
+        function renderLeaderboard(data) {
+            const body = document.getElementById('leaderboard-body');
+            if (!data || data.length === 0) { body.innerHTML = '<tr><td colspan="2">Kayıt yok.</td></tr>'; return; }
+            body.innerHTML = data.slice(0, 5).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
+        }
 
         async function startStation() {
             const nameInp = document.getElementById('operator-name').value.trim();
             if(!nameInp) { alert("Lütfen bir isim girişi yapın!"); return; }
-            operatorName = nameInp.toUpperCase();
+            operatorName = nameInp.toUpperCase().replace(/[.#$\[\]]/g, ""); // Firebase geçersiz karakter temizliği
             
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if(audioCtx.state === 'suspended') await audioCtx.resume();
@@ -161,6 +197,7 @@
             nextRound();
         }
 
+        // --- SES VE OYUN MANTIĞI ---
         async function beep(duration) {
             return new Promise(resolve => {
                 const osc = audioCtx.createOscillator();
@@ -190,15 +227,13 @@
             noise.buffer = buffer;
             const noiseGain = audioCtx.createGain();
             noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            noise.connect(noiseGain);
-            noiseGain.connect(audioCtx.destination);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
             noise.start();
         }
 
         async function playMorse(word) {
             if (isPlaying) return;
-            isPlaying = true;
-            toggleButtons(true);
+            isPlaying = true; toggleButtons(true);
             for (let char of word) {
                 const code = MORSE_CODE[char];
                 if (code) {
@@ -209,13 +244,12 @@
                     await new Promise(r => setTimeout(r, 600));
                 }
             }
-            isPlaying = false;
-            toggleButtons(false);
+            isPlaying = false; toggleButtons(false);
         }
 
         function toggleButtons(disabled) {
             const btns = ['btn-replay', 'btn-submit', 'btn-reveal', 'btn-next'];
-            btns.forEach(id => { if(document.getElementById(id)) document.getElementById(id).disabled = disabled; });
+            btns.forEach(id => { document.getElementById(id).disabled = disabled; });
         }
 
         function nextRound() {
@@ -234,19 +268,16 @@
         async function checkAnswer() {
             const val = document.getElementById('answer-input').value.trim().toUpperCase();
             if(!val) return;
-
             document.getElementById('status-msg').innerText = "MESAJ KONTROL EDİLİYOR...";
             toggleButtons(true);
-
             await new Promise(r => setTimeout(r, 800));
-
             if(val === currentWord) {
                 document.getElementById('stamp').classList.add('show');
                 document.getElementById('status-msg').innerText = "DOĞRULANDI! YENİ SİNYALE GEÇİLİYOR...";
                 if(canEarnPoints) {
                     score += 10;
                     document.getElementById('score-display').innerText = "SKOR: " + score;
-                    saveToCloud();
+                    submitScoreToFirebase();
                 }
                 setTimeout(() => nextRound(), 2000);
             } else {
@@ -256,63 +287,14 @@
             }
         }
 
-        // --- JSONBin API ---
-        async function fetchLeaderboard() {
-            try {
-                const resp = await fetch(DB_URL + "/latest", {
-                    headers: { "X-Master-Key": API_KEY }
-                });
-                if (resp.ok) {
-                    const res = await resp.json();
-                    renderLeaderboard(res.record);
-                }
-            } catch (e) { console.error("Fetch Error", e); }
-        }
-
-        async function saveToCloud() {
-            try {
-                const resp = await fetch(DB_URL + "/latest", {
-                    headers: { "X-Master-Key": API_KEY }
-                });
-                let leaderboard = [];
-                if (resp.ok) {
-                    const res = await resp.json();
-                    leaderboard = res.record;
-                }
-
-                const existingIdx = leaderboard.findIndex(e => e.name === operatorName);
-                if (existingIdx > -1) {
-                    leaderboard[existingIdx].score = Math.max(leaderboard[existingIdx].score, score);
-                } else {
-                    leaderboard.push({name: operatorName, score: score});
-                }
-
-                leaderboard.sort((a, b) => b.score - a.score);
-                leaderboard = leaderboard.slice(0, 10);
-
-                await fetch(DB_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
-                    },
-                    body: JSON.stringify(leaderboard)
-                });
-                renderLeaderboard(leaderboard);
-            } catch (e) { console.error("Save Error", e); }
-        }
-
-        function renderLeaderboard(data) {
-            const body = document.getElementById('leaderboard-body');
-            if (!data || data.length === 0) {
-                body.innerHTML = '<tr><td colspan="2">Henüz kayıt yok.</td></tr>';
-                return;
-            }
-            body.innerHTML = data.slice(0, 5).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
+        function submitScoreToFirebase() {
+            set(ref(db, 'leaderboard/' + operatorName), {
+                name: operatorName,
+                score: score
+            }).catch(e => console.error("Firebase Error", e));
         }
 
         function revealSolution() { canEarnPoints = false; document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; }
-        function playCurrentWord() { if(!isPlaying && currentWord) playMorse(currentWord); }
     </script>
 </body>
 </html>
