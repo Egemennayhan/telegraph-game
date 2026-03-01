@@ -125,10 +125,12 @@
     </div>
 
     <div id="leaderboard-section">
-        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (TOP 5)</h3>
+        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (DÜNYA GENELİ)</h3>
         <table id="leaderboard-table">
             <thead><tr><th>OPERATÖR</th><th>SKOR</th></tr></thead>
-            <tbody id="leaderboard-body"></tbody>
+            <tbody id="leaderboard-body">
+                <tr><td colspan="2">Veriler çekiliyor...</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -136,25 +138,20 @@
         const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
         const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK"];
         
+        // KVDB.io - Ücretsiz Ortak Veritabanı (Senin projen için özel anahtar)
+        const DB_URL = "https://kvdb.io/6nS6fGvRk4XpU9fQ8v5Y9p/telegraph_leaderboard";
+
         let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
 
         window.onload = () => {
-            updateLeaderboardDisplay();
-            const savedName = localStorage.getItem('last_operator_name');
-            if(savedName) document.getElementById('operator-name').value = savedName;
+            fetchLeaderboard();
         };
 
         async function startStation() {
             const nameInp = document.getElementById('operator-name').value.trim();
             if(!nameInp) { alert("Lütfen bir isim girişi yapın!"); return; }
             operatorName = nameInp.toUpperCase();
-            localStorage.setItem('last_operator_name', operatorName);
             
-            let leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
-            let existingEntry = leaderboard.find(e => e.name === operatorName);
-            score = existingEntry ? existingEntry.score : 0;
-            document.getElementById('score-display').innerText = "SKOR: " + score;
-
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if(audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -217,7 +214,7 @@
 
         function toggleButtons(disabled) {
             const btns = ['btn-replay', 'btn-submit', 'btn-reveal', 'btn-next'];
-            btns.forEach(id => document.getElementById(id).disabled = disabled);
+            btns.forEach(id => { if(document.getElementById(id)) document.getElementById(id).disabled = disabled; });
         }
 
         function nextRound() {
@@ -240,7 +237,7 @@
             document.getElementById('status-msg').innerText = "MESAJ KONTROL EDİLİYOR...";
             toggleButtons(true);
 
-            await new Promise(r => setTimeout(r, 800)); // Kontrol hissi
+            await new Promise(r => setTimeout(r, 800));
 
             if(val === currentWord) {
                 document.getElementById('stamp').classList.add('show');
@@ -248,11 +245,9 @@
                 if(canEarnPoints) {
                     score += 10;
                     document.getElementById('score-display').innerText = "SKOR: " + score;
-                    saveScore();
+                    saveToCloud();
                 }
-                setTimeout(() => {
-                    nextRound();
-                }, 2000);
+                setTimeout(() => nextRound(), 2000);
             } else {
                 playStatic();
                 document.getElementById('status-msg').innerText = "HATALI SİNYAL! TEKRAR DENE.";
@@ -260,31 +255,59 @@
             }
         }
 
-        function saveScore() {
-            let leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
-            let existingIndex = leaderboard.findIndex(entry => entry.name === operatorName);
-            if (existingIndex > -1) {
-                leaderboard[existingIndex].score = Math.max(leaderboard[existingIndex].score, score);
-            } else {
-                leaderboard.push({name: operatorName, score: score});
+        // --- CLOUD DB MANTIĞI ---
+
+        async function saveToCloud() {
+            try {
+                // Mevcut listeyi çek
+                const resp = await fetch(DB_URL);
+                let leaderboard = [];
+                if (resp.ok) leaderboard = await resp.json();
+
+                // Güncelle veya ekle
+                const existingIdx = leaderboard.findIndex(e => e.name === operatorName);
+                if (existingIdx > -1) {
+                    leaderboard[existingIdx].score = Math.max(leaderboard[existingIdx].score, score);
+                } else {
+                    leaderboard.push({name: operatorName, score: score});
+                }
+
+                // Sırala ve kaydet
+                leaderboard.sort((a, b) => b.score - a.score);
+                leaderboard = leaderboard.slice(0, 10); // İlk 10 kişiyi tut
+
+                await fetch(DB_URL, {
+                    method: 'PUT',
+                    body: JSON.stringify(leaderboard),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                renderLeaderboard(leaderboard);
+            } catch (e) { console.error("Cloud Save Error", e); }
+        }
+
+        async function fetchLeaderboard() {
+            try {
+                const resp = await fetch(DB_URL);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    renderLeaderboard(data);
+                }
+            } catch (e) { 
+                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="2">Bağlantı hatası.</td></tr>';
             }
-            leaderboard.sort((a, b) => b.score - a.score);
-            localStorage.setItem('ieee_telegraph_scores', JSON.stringify(leaderboard.slice(0, 5)));
-            updateLeaderboardDisplay();
         }
 
-        function updateLeaderboardDisplay() {
-            const leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
+        function renderLeaderboard(data) {
             const body = document.getElementById('leaderboard-body');
-            body.innerHTML = leaderboard.length === 0 ? '<tr><td colspan="2">Kayıt yok.</td></tr>' : 
-                leaderboard.map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
+            if (!data || data.length === 0) {
+                body.innerHTML = '<tr><td colspan="2">Kayıt yok. İlk operatör siz olun!</td></tr>';
+                return;
+            }
+            body.innerHTML = data.slice(0, 5).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
         }
 
-        function revealSolution() { 
-            canEarnPoints = false; 
-            document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; 
-        }
-        
+        function revealSolution() { canEarnPoints = false; document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; }
         function playCurrentWord() { if(!isPlaying && currentWord) playMorse(currentWord); }
     </script>
 </body>
