@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegrapher's Challenge - IEEE Çankaya</title>
+    <title>IEEE CUSB SPS - Telegrapher's Challenge</title>
     <style>
-        /* VINTAGE TASARIM - CSS */
         :root {
             --paper: #e5d3b3;
             --wood: #3d2b1f;
@@ -19,316 +18,237 @@
             background-image: url('https://www.transparenttextures.com/patterns/dark-wood.png');
             font-family: 'Courier New', Courier, monospace;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             color: var(--dark-ink);
+            padding: 20px;
         }
 
         #telegraph-station {
             background: var(--paper);
             background-image: url('https://www.transparenttextures.com/patterns/parchment.png');
-            width: 650px;
-            padding: 40px;
+            width: 95%;
+            max-width: 650px;
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.1);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
             border: 15px solid var(--wood);
             outline: 5px solid var(--brass);
-            position: relative;
             text-align: center;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            position: relative;
         }
 
-        h1 {
-            font-size: 1.6rem;
-            margin-top: 0;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--dark-ink);
-            padding-bottom: 10px;
-            letter-spacing: 2px;
+        #leaderboard-section {
+            background: #d4c3a3;
+            width: 95%;
+            max-width: 650px;
+            padding: 20px;
+            border: 5px solid var(--wood);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            margin-top: 10px;
         }
 
+        h1 { font-size: 1.4rem; border-bottom: 2px solid var(--dark-ink); padding-bottom: 10px; margin-top: 0; }
+        
         #amber-lamp {
-            width: 60px;
-            height: 60px;
-            background-color: #332200;
-            border-radius: 50%;
-            margin: 20px auto;
-            border: 4px solid var(--brass);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            transition: background-color 0.05s, box-shadow 0.05s;
+            width: 50px; height: 50px; background-color: #332200;
+            border-radius: 50%; margin: 15px auto; border: 4px solid var(--brass);
+            transition: background-color 0.05s;
         }
-
-        #amber-lamp.lit {
-            background-color: var(--amber);
-            box-shadow: 0 0 40px var(--amber), 0 0 80px var(--amber);
-        }
-
-        .input-group {
-            margin: 25px 0;
-        }
+        #amber-lamp.lit { background-color: var(--amber); box-shadow: 0 0 30px var(--amber); }
 
         input[type="text"] {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid var(--dark-ink);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 2rem;
-            text-align: center;
-            text-transform: uppercase;
-            width: 85%;
-            outline: none;
-            letter-spacing: 5px;
+            background: transparent; border: none; border-bottom: 2px solid var(--dark-ink);
+            font-family: inherit; font-size: 1.5rem; text-align: center;
+            text-transform: uppercase; width: 80%; outline: none; margin: 10px 0;
         }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
+        .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        
         button {
-            background: var(--wood);
-            color: var(--paper);
-            border: 2px solid var(--brass);
-            padding: 10px 15px;
-            font-family: inherit;
+            background: var(--wood); color: var(--paper); border: 2px solid var(--brass);
+            padding: 10px 15px; font-family: inherit; cursor: pointer; text-transform: uppercase;
             font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.2s;
-            font-size: 0.9rem;
         }
 
-        button:hover {
-            background: var(--brass);
-            color: var(--wood);
-        }
-
-        button.secondary {
-            background: transparent;
-            color: var(--wood);
-            border: 2px solid var(--wood);
-        }
-
-        #level-indicator {
-            font-size: 0.8rem;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-style: italic;
-        }
-
+        #leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #leaderboard-table th, #leaderboard-table td { border-bottom: 1px solid var(--wood); padding: 8px; text-align: left; }
+        
         #stamp {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-20deg) scale(0);
-            border: 5px solid #8b0000;
-            color: #8b0000;
-            padding: 10px 20px;
-            font-size: 2.5rem;
-            font-weight: bold;
-            opacity: 0.7;
-            pointer-events: none;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            border: 5px solid #8b0000; color: #8b0000; padding: 10px; font-size: 2rem;
+            font-weight: bold; opacity: 0.7; transition: transform 0.2s; pointer-events: none;
             z-index: 10;
+            background: rgba(229, 211, 179, 0.8);
         }
+        #stamp.show { transform: translate(-50%, -50%) rotate(-15deg) scale(1); }
 
-        #stamp.show {
-            transform: translate(-50%, -50%) rotate(-20deg) scale(1.2);
-        }
-
-        #solution-display {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #8b0000;
-            min-height: 1.5em;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-        }
-
-        .ieee-brand {
-            font-size: 0.7rem;
-            margin-top: 15px;
-            opacity: 0.6;
-        }
+        .ieee-brand { font-size: 0.7rem; margin-top: 20px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
     <div id="telegraph-station">
-        <div id="level-indicator">OPERATÖR: <span id="current-rank">ACEMİ</span></div>
         <h1>IEEE CUSB SPS TELGRAF İSTASYONU</h1>
-        <p>Gelen sinyali çözmeye çalış...</p>
         
-        <div id="amber-lamp"></div>
-
-        <div id="stamp">ONAYLANDI</div>
-
-        <div class="input-group">
-            <input type="text" id="answer-input" placeholder="BURAYA YAZ" autocomplete="off">
+        <div id="setup-screen">
+            <p>Operatör Adınızı Girin:</p>
+            <input type="text" id="operator-name" placeholder="İSİM" maxlength="12">
+            <div class="controls">
+                <button onclick="startStation()" style="background:var(--brass); color:var(--wood);">İSTASYONU BAŞLAT</button>
+            </div>
         </div>
 
-        <div class="controls" id="initial-controls">
-            <button onclick="startStation()" style="background: var(--brass); color: var(--wood); font-size: 1.2rem; padding: 15px 25px;">İSTASYONU BAŞLAT</button>
+        <div id="game-screen" style="display:none;">
+            <div id="amber-lamp"></div>
+            <div id="stamp">ONAYLANDI</div>
+            <input type="text" id="answer-input" placeholder="MESAJI YAZ" autocomplete="off">
+            <div class="controls">
+                <button onclick="playCurrentWord()">TEKRAR DİNLE</button>
+                <button onclick="checkAnswer()">GÖNDER</button>
+                <button onclick="revealSolution()" style="opacity:0.7">SİNYALİ ÇÖZ</button>
+                <button onclick="nextRound()">YENİ KELİME</button>
+            </div>
+            <p id="status-msg" style="margin-top:10px; font-weight:bold; min-height: 1.2em;"></p>
+            <p id="score-display">SKOR: 0</p>
         </div>
-
-        <div class="controls" id="game-controls" style="display: none;">
-            <button onclick="playCurrentWord()">TEKRAR DİNLE</button>
-            <button onclick="checkAnswer()">GÖNDER</button>
-            <button onclick="revealSolution()" class="secondary">SİNYALİ ÇÖZ</button>
-            <button onclick="nextRound()">YENİ KELİME</button>
-        </div>
-
-        <div id="solution-display"></div>
-        <p id="status-msg" style="margin-top: 10px; min-height: 1.2em; font-size: 0.9rem;"></p>
         
         <div class="ieee-brand">IEEE CANKAYA UNIVERSITY STUDENT BRANCH - 2026</div>
     </div>
 
+    <div id="leaderboard-section">
+        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (TOP 5)</h3>
+        <table id="leaderboard-table">
+            <thead><tr><th>OPERATÖR</th><th>SKOR</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+    </div>
+
     <script>
-        const MORSE_CODE = {
-            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
-            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
-            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
-            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
-            'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
-            '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
-            '9': '----.', '0': '-----'
+        const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
+        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT"];
+        
+        let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
+
+        window.onload = () => {
+            updateLeaderboardDisplay();
+            // Eski ismi hatırla
+            const savedName = localStorage.getItem('last_operator_name');
+            if(savedName) document.getElementById('operator-name').value = savedName;
         };
 
-        const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "TEKNIK", "ROBOT"];
-        const RANKS = ["ACEMİ", "USTA", "UZMAN"];
-        
-        let currentWord = "";
-        let audioCtx = null;
-        let isPlaying = false;
-        let score = 0;
+        async function startStation() {
+            const nameInp = document.getElementById('operator-name').value.trim();
+            if(!nameInp) { alert("Lütfen bir isim girişi yapın!"); return; }
+            operatorName = nameInp.toUpperCase();
+            localStorage.setItem('last_operator_name', operatorName);
+            
+            // Mevcut skoru yükle (Eski skorun üzerine devam etmesi için)
+            let leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
+            let existingEntry = leaderboard.find(e => e.name === operatorName);
+            score = existingEntry ? existingEntry.score : 0;
+            document.getElementById('score-display').innerText = "SKOR: " + score;
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(audioCtx.state === 'suspended') await audioCtx.resume();
 
-        function startStation() {
-            initAudio();
-            document.getElementById('initial-controls').style.display = 'none';
-            document.getElementById('game-controls').style.display = 'flex';
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
             nextRound();
         }
 
-        function beep(duration) {
+        async function beep(duration) {
             return new Promise(resolve => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(750, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0, audioCtx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
-                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration / 1000 - 0.01);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration/1000 - 0.01);
+                osc.connect(gain); gain.connect(audioCtx.destination);
                 document.getElementById('amber-lamp').classList.add('lit');
                 osc.start();
-                setTimeout(() => {
-                    osc.stop();
+                setTimeout(() => { 
+                    osc.stop(); 
                     document.getElementById('amber-lamp').classList.remove('lit');
                     resolve();
                 }, duration);
             });
         }
 
-        function playStatic() {
-            const bufferSize = audioCtx.sampleRate * 0.5;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            noise.connect(noiseGain);
-            noiseGain.connect(audioCtx.destination);
-            noise.start();
-        }
-
         async function playMorse(word) {
             if (isPlaying) return;
             isPlaying = true;
-            initAudio();
-            document.getElementById('solution-display').innerText = "";
-            
-            for (let char of word.toUpperCase()) {
+            for (let char of word) {
                 const code = MORSE_CODE[char];
                 if (code) {
-                    for (let symbol of code) {
-                        if (symbol === '.') await beep(100);
-                        else if (symbol === '-') await beep(350);
-                        await new Promise(r => setTimeout(r, 120)); // Sembol arası boşluk
+                    for (let sym of code) {
+                        await beep(sym === '.' ? 100 : 350);
+                        await new Promise(r => setTimeout(r, 120));
                     }
+                    await new Promise(r => setTimeout(r, 600));
                 }
-                // HARFLER ARASI BOŞLUK ARTIRILDI: 800ms
-                await new Promise(r => setTimeout(r, 800)); 
             }
             isPlaying = false;
         }
 
         function nextRound() {
-            if (isPlaying) return;
+            if(isPlaying) return;
             currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+            canEarnPoints = true;
             document.getElementById('answer-input').value = "";
-            document.getElementById('status-msg').innerText = "Hazırlanıyor...";
-            document.getElementById('solution-display').innerText = "";
+            document.getElementById('status-msg').innerText = "Sinyal bekleniyor...";
             document.getElementById('stamp').classList.remove('show');
             setTimeout(() => {
-                playMorse(currentWord);
                 document.getElementById('status-msg').innerText = "Sinyal alınıyor...";
-            }, 800);
-        }
-
-        function playCurrentWord() {
-            if (currentWord && !isPlaying) playMorse(currentWord);
+                playMorse(currentWord);
+            }, 1000);
         }
 
         function checkAnswer() {
-            const userInp = document.getElementById('answer-input').value.trim().toUpperCase();
-            if (!userInp) return;
-
-            if (userInp === currentWord) {
+            const val = document.getElementById('answer-input').value.trim().toUpperCase();
+            if(val === currentWord) {
                 document.getElementById('stamp').classList.add('show');
+                if(canEarnPoints) {
+                    score += 10;
+                    document.getElementById('score-display').innerText = "SKOR: " + score;
+                    saveScore();
+                }
                 document.getElementById('status-msg').innerText = "TEBRİKLER! DOĞRU MESAJ.";
-                score++;
-                updateRank();
             } else {
-                playStatic();
-                document.getElementById('status-msg').innerText = "HATALI SİNYAL! Tekrar dene veya çözümü gör.";
+                document.getElementById('status-msg').innerText = "HATALI SİNYAL! TEKRAR DENE.";
             }
         }
 
-        function revealSolution() {
-            if (!currentWord) return;
-            document.getElementById('solution-display').innerText = "GELEN MESAJ: " + currentWord;
-            document.getElementById('status-msg').innerText = "Sinyal deşifre edildi.";
+        function saveScore() {
+            let leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
+            let existingIndex = leaderboard.findIndex(entry => entry.name === operatorName);
+            if (existingIndex > -1) {
+                leaderboard[existingIndex].score = Math.max(leaderboard[existingIndex].score, score);
+            } else {
+                leaderboard.push({name: operatorName, score: score});
+            }
+            leaderboard.sort((a, b) => b.score - a.score);
+            localStorage.setItem('ieee_telegraph_scores', JSON.stringify(leaderboard.slice(0, 5)));
+            updateLeaderboardDisplay();
         }
 
-        function updateRank() {
-            const rankSpan = document.getElementById('current-rank');
-            if (score > 6) rankSpan.innerText = RANKS[2];
-            else if (score > 3) rankSpan.innerText = RANKS[1];
+        function updateLeaderboardDisplay() {
+            const leaderboard = JSON.parse(localStorage.getItem('ieee_telegraph_scores') || '[]');
+            const body = document.getElementById('leaderboard-body');
+            body.innerHTML = leaderboard.length === 0 ? '<tr><td colspan="2">Kayıt yok.</td></tr>' : 
+                leaderboard.map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
         }
 
-        window.onload = () => {
-            currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-            // Mobilde ilk yüklemede otomatik başlamayı engellemiştik, 
-            // ama currentWord'ün dolu olduğundan emin olalım.
-        };
+        function revealSolution() { canEarnPoints = false; document.getElementById('status-msg').innerText = "MESAJ: " + currentWord; }
+        function playCurrentWord() { if(!isPlaying && currentWord) playMorse(currentWord); }
     </script>
 </body>
 </html>
