@@ -130,11 +130,11 @@
     </div>
 
     <div id="leaderboard-section">
-        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (CANLI - TOP 5)</h3>
+        <h3 style="margin-top:0;">📜 OPERATÖR KAYIT DEFTERİ (CANLI - TOP 10)</h3>
         <table id="leaderboard-table">
             <thead><tr><th>OPERATÖR</th><th>SKOR</th></tr></thead>
             <tbody id="leaderboard-body">
-                <tr><td colspan="2">Veriler çekiliyor...</td></tr>
+                <tr><td colspan="2">Yükleniyor...</td></tr>
             </tbody>
         </table>
     </div>
@@ -187,7 +187,7 @@
         function renderLeaderboard(data) {
             const body = document.getElementById('leaderboard-body');
             if (!data || data.length === 0) { body.innerHTML = '<tr><td colspan="2">Kayıt yok.</td></tr>'; return; }
-            body.innerHTML = data.slice(0, 5).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
+            body.innerHTML = data.slice(0, 10).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
         }
 
         async function startStation() {
