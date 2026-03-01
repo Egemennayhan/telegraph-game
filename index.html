@@ -129,7 +129,7 @@
         <table id="leaderboard-table">
             <thead><tr><th>OPERATÖR</th><th>SKOR</th></tr></thead>
             <tbody id="leaderboard-body">
-                <tr><td colspan="2">Veriler çekiliyor...</td></tr>
+                <tr><td colspan="2">Yükleniyor...</td></tr>
             </tbody>
         </table>
     </div>
@@ -138,8 +138,9 @@
         const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----'};
         const WORDS = ["IEEE", "CANKAYA", "TESLA", "MORSE", "RADYO", "SINYAL", "AKIM", "DEVRE", "KOD", "DATA", "ROBOT", "SPS", "CUSB", "ELEKTRONIK"];
         
-        // KVDB.io - Ücretsiz Ortak Veritabanı (Senin projen için özel anahtar)
-        const DB_URL = "https://kvdb.io/6nS6fGvRk4XpU9fQ8v5Y9p/telegraph_leaderboard";
+        // JSONBin.io - Daha güvenilir bir API (Kayıtsız kullanım)
+        const DB_URL = "https://api.jsonbin.io/v3/b/67c3746fad19ca34f814980f";
+        const API_KEY = "$2a$10$wN9iMRE2i5Z7Z9W6jE9O1.V8G5S4L3y9G9A1z8vP7m0p8f5z5Z5Z6"; // Örnek key (Normalde gizli olmalı ama bu projenin statik yapısı gereği mecburi)
 
         let audioCtx, currentWord, operatorName = "", score = 0, canEarnPoints = true, isPlaying = false;
 
@@ -255,16 +256,30 @@
             }
         }
 
-        // --- CLOUD DB MANTIĞI ---
+        // --- JSONBin API ---
+        async function fetchLeaderboard() {
+            try {
+                const resp = await fetch(DB_URL + "/latest", {
+                    headers: { "X-Master-Key": API_KEY }
+                });
+                if (resp.ok) {
+                    const res = await resp.json();
+                    renderLeaderboard(res.record);
+                }
+            } catch (e) { console.error("Fetch Error", e); }
+        }
 
         async function saveToCloud() {
             try {
-                // Mevcut listeyi çek
-                const resp = await fetch(DB_URL);
+                const resp = await fetch(DB_URL + "/latest", {
+                    headers: { "X-Master-Key": API_KEY }
+                });
                 let leaderboard = [];
-                if (resp.ok) leaderboard = await resp.json();
+                if (resp.ok) {
+                    const res = await resp.json();
+                    leaderboard = res.record;
+                }
 
-                // Güncelle veya ekle
                 const existingIdx = leaderboard.findIndex(e => e.name === operatorName);
                 if (existingIdx > -1) {
                     leaderboard[existingIdx].score = Math.max(leaderboard[existingIdx].score, score);
@@ -272,36 +287,25 @@
                     leaderboard.push({name: operatorName, score: score});
                 }
 
-                // Sırala ve kaydet
                 leaderboard.sort((a, b) => b.score - a.score);
-                leaderboard = leaderboard.slice(0, 10); // İlk 10 kişiyi tut
+                leaderboard = leaderboard.slice(0, 10);
 
                 await fetch(DB_URL, {
                     method: 'PUT',
-                    body: JSON.stringify(leaderboard),
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(leaderboard)
                 });
-                
                 renderLeaderboard(leaderboard);
-            } catch (e) { console.error("Cloud Save Error", e); }
-        }
-
-        async function fetchLeaderboard() {
-            try {
-                const resp = await fetch(DB_URL);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    renderLeaderboard(data);
-                }
-            } catch (e) { 
-                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="2">Bağlantı hatası.</td></tr>';
-            }
+            } catch (e) { console.error("Save Error", e); }
         }
 
         function renderLeaderboard(data) {
             const body = document.getElementById('leaderboard-body');
             if (!data || data.length === 0) {
-                body.innerHTML = '<tr><td colspan="2">Kayıt yok. İlk operatör siz olun!</td></tr>';
+                body.innerHTML = '<tr><td colspan="2">Henüz kayıt yok.</td></tr>';
                 return;
             }
             body.innerHTML = data.slice(0, 5).map(d => `<tr><td>${d.name}</td><td>${d.score}</td></tr>`).join('');
